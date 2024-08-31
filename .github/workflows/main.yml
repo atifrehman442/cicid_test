@@ -7,23 +7,21 @@ on:
     branches:
       - main
       - master
+      - develop
 
 name: "Build & Release"
 
 jobs:
   build:
     name: Build & Release
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '12'
+          java-version: '11.0.24+8'
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -31,21 +29,9 @@ jobs:
 
       - run: flutter build apk --release --split-per-abi
 
-      - if: matrix.os == 'macos-latest'
-        run: |
-          flutter build ios --no-codesign
-          cd build/ios/iphoneos
-          mkdir Payload
-          cd Payload
-          ln -s ../Runner.app
-          cd ..
-          zip -r app.ipa Payload
-
       - name: Push to Releases
         uses: ncipollo/release-action@v1
         with:
-          artifacts: |
-            build/app/outputs/apk/release/*.apk
-            build/ios/iphoneos/app.ipa
+          artifacts: "build/app/outputs/apk/release/*.apk"
           tag: v1.0.${{ github.run_number }}
           token: ${{ secrets.TOKEN }}
